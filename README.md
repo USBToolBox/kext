@@ -2,7 +2,7 @@
 
 *Making USB mapping simple(r)*
 
-The USBToolBox kext is a kext intended to make common actions for USB mapping easier.
+The USBToolBox kext is a kext intended to make common actions for USB mapping easier. It supports El Capitan and up, although only Catalina and up have been tested.
 
 ## Features
 
