@@ -24,15 +24,15 @@ USBToolBox supports configuration using boot arguments, properties, or in the ma
 
 Properties can be any type and only existence, not type, is checked, unless otherwise specified.
 
-`-utboff` (property `utb-off`): Disable USBToolBox completely
+* `-utboff` (property `utb-off`): Disable USBToolBox completely
 
-`-utbacpioff` (property `utb-acpi-off`): Disable RHUB removal from ACPI plane (borked ACPI removal)
+* `-utbacpioff` (property `utb-acpi-off`): Disable RHUB removal from ACPI plane (borked ACPI removal)
 
-`-utbappleoff` (property `utb-apple-off`): Disable existing `ports` and `port-count` removal
+* `-utbappleoff` (property `utb-apple-off`): Disable existing `ports` and `port-count` removal
 
-`-utbmapoff` (property `utb-map-off`): Disable custom map (useful for testing)
+* `-utbmapoff` (property `utb-map-off`): Disable custom map (useful for testing)
 
-`utbwait=XXX` (property `utb-wait`, type number): Custom delay for `waitForMatchingService`. Integer between 1-180, inclusive.
+* `utbwait=XXX` (property `utb-wait`, type number): Custom delay for `waitForMatchingService`, in seconds. Integer between 1-180, inclusive.
 
 ## Converting Existing Maps
 
