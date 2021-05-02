@@ -77,7 +77,6 @@ private:
     IORegistryEntry* pciDevice = NULL;
     IORegistryEntry* controllerInstance = NULL;
     
-    void installMergeNotifier(const OSSymbol* type, const char* className	);
     void deleteProperty(IORegistryEntry* provider, const char* property);
     OSDictionary* createMatchingDictionary();
     IORegistryEntry* getControllerViaMatching();
