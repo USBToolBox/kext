@@ -48,7 +48,7 @@ Converting existing maps is fairly easy.
 
 You can get the latest release from the GitHub [releases tab](https://github.com/USBToolBox/kext/releases).
 
-The zip contains 2 kexts: the main `USBToolBox.kext`, and `UTBDefault.kext`, a codeless kext used for attaching USBToolBox to all PCIe USB controllers. This is designed for use before you map, so that you can have all USB ports working (assuming no port limit) before you map. However, it is not needed if you choose to map from the start (ie. from Windows, using the USBToolBox [tool](https://github.com/USBToolBox/tool)).
+The zip contains 2 kexts: the main `USBToolBox.kext`, and `UTBDefault.kext`, a codeless kext used for attaching USBToolBox to all PCIe USB controllers. This is designed for use before you map, so that you can have all USB ports working (assuming no port limit) before you map. However, it is not needed and must be removed if you choose to map from the start (ie. from Windows, using the USBToolBox [tool](https://github.com/USBToolBox/tool)).
 
 A basic fresh install flow would be as follows:
 
