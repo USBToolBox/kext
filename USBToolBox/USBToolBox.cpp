@@ -246,7 +246,7 @@ void USBToolBox::mergeProperties(IORegistryEntry* instance) {
                     this->controllerInstance->setProperty(key, properties->getObject(key));
                 }
                 DEBUGLOGPROV("Successfully applied map");
-                OSSafeReleaseNULL(acpiIterator);
+                OSSafeReleaseNULL(propertyIterator);
             } else {
                 SYSTEMLOGPROV("Failed to create property iterator!");
             }
