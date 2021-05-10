@@ -239,15 +239,16 @@ void USBToolBox::mergeProperties(IORegistryEntry* instance) {
         }
         
         if (properties) {
-            bool iterateStatus = properties->iterateObjects(^bool (const OSSymbol * key, OSObject * object) {
-                //DEBUGLOGPROV("Applied property %s", key->getCStringNoCopy());
-                this->controllerInstance->setProperty(key, object);
-                return false; // The callback should return true to early terminate the iteration, false otherwise.
-            });
-            if (!iterateStatus) {
-                SYSTEMLOGPROV("Map application iteration failed!");
-            } else {
+            if (OSCollectionIterator* propertyIterator = OSCollectionIterator::withCollection(properties)) {
+                DEBUGLOGPROV("Starting iteration over properties");
+                while (OSSymbol* key = OSDynamicCast(OSSymbol, propertyIterator->getNextObject())) {
+                    //DEBUGLOGPROV("Applied property %s", key->getCStringNoCopy());
+                    this->controllerInstance->setProperty(key, properties->getObject(key));
+                }
                 DEBUGLOGPROV("Successfully applied map");
+                OSSafeReleaseNULL(acpiIterator);
+            } else {
+                SYSTEMLOGPROV("Failed to create property iterator!");
             }
         } else {
             DEBUGLOGPROV("No properties to apply");
