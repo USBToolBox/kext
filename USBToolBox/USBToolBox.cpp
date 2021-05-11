@@ -190,7 +190,7 @@ IORegistryEntry* USBToolBox::getControllerViaIteration() {
     
     DEBUGLOGPROV("Starting iteration over IOService plane");
     while (IORegistryEntry* entry = OSDynamicCast(IORegistryEntry, iterator->getNextObject())) {
-        DEBUGLOGPROV("Object name is %s with class %s", entry->getName(), entry->getMetaClass()->getClassName());
+        // DEBUGLOGPROV("Object name is %s with class %s", entry->getName(), entry->getMetaClass()->getClassName());
         if (checkClassHierarchy(entry, "AppleUSBHostController")) {
             // This is it
             DEBUGLOGPROV("%s is AppleUSBHostController instance", entry->getName());
@@ -335,6 +335,25 @@ IOService* USBToolBox::probe(IOService* provider, SInt32* score) {
     return super::probe(provider, score);
 }
 
+bool USBToolBox::matchingCallback(OSDictionary* matchingDict, IOService* newService, IONotifier* notifier) {
+    DEBUGLOGPROV("controller callback start");
+    newService->retain();
+    // These actions are synchronized with invocations of the notification handler, so removing a notification request will guarantee the handler is not being executed.
+    notifier->remove();
+    mergeProperties(newService);
+    // addMatchingNotification does not consume a reference on the matching dictionary when the notification is removed, unlike addNotification.
+    // Should never be null, but better safe than sorry.
+    OSSafeReleaseNULL(matchingDict);
+    
+    DEBUGLOGPROV("controller callback end");
+    terminate();
+    return true;
+}
+
+bool USBToolBox::_matchingCallback(void* target, void* matchingDict, IOService* newService, IONotifier* notifier) {
+    return static_cast<USBToolBox*>(target)->matchingCallback(static_cast<OSDictionary*>(matchingDict), newService, notifier);
+}
+
 bool USBToolBox::start(IOService *provider) {
     DEBUGLOGPROV("start start");
     // If we're here we couldn't get the instance in probe
@@ -359,20 +378,8 @@ bool USBToolBox::start(IOService *provider) {
             OSSafeReleaseNULL(matchingDict);
             return false;
         }
-        // addMatchingNotification(const OSSymbol *type, OSDictionary *matching, SInt32 priority, IOServiceMatchingNotificationHandlerBlock handler)
-        IONotifier* notifierStatus = addMatchingNotification(gIOMatchedNotification, matchingDict, 0, ^bool (IOService * newService, IONotifier * notifier) {
-            DEBUGLOGPROV("controller callback start");
-            newService->retain();
-            mergeProperties(newService);
-            // addMatchingNotification does not consume a reference on the matching dictionary when the notification is removed, unlike addNotification.
-            matchingDict->release();
-            // These actions are synchronized with invocations of the notification handler, so removing a notification request will guarantee the handler is not being executed.
-            notifier->remove();
-            
-            DEBUGLOGPROV("controller callback end");
-            terminate();
-            return true;
-        });
+        // static IONotifier* addMatchingNotification(const OSSymbol* type, OSDictionary* matching, IOServiceMatchingNotificationHandler handler, void* target, void* ref = NULL, SInt32 priority = 0)
+        IONotifier* notifierStatus = addMatchingNotification(gIOMatchedNotification, matchingDict, _matchingCallback, this, matchingDict);
         DEBUGLOGPROV("Installed controller notifier status: %s", notifierStatus ? "successful" : "failed");
     } else {
         mergeProperties();

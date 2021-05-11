@@ -79,6 +79,8 @@ private:
     
     void deleteProperty(IORegistryEntry* provider, const char* property);
     OSDictionary* createMatchingDictionary();
+    bool matchingCallback(OSDictionary* matchingDict, IOService* newService, IONotifier* notifier);
+    static bool _matchingCallback(void* matchingDict, void* refCon, IOService* newService, IONotifier* notifier);
     IORegistryEntry* getControllerViaMatching();
     IORegistryEntry* getControllerViaIteration();
     void mergeProperties(IORegistryEntry* instance = NULL);
