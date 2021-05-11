@@ -27,21 +27,13 @@
 	<key>OSBundleLibraries</key>
 	<dict>
 		<key>com.apple.driver.AppleUSBHostMergeProperties</key>
-		<string>1.2</string>
+		<string>1.0</string>
 		<key>com.apple.iokit.IOPCIFamily</key>
 		<string>2.9</string>
-		<key>com.apple.kpi.bsd</key>
-		<string>19.0.0</string>
-		<key>com.apple.kpi.dsep</key>
-		<string>19.0.0</string>
 		<key>com.apple.kpi.iokit</key>
-		<string>19.0.0</string>
+		<string>15.0.0</string>
 		<key>com.apple.kpi.libkern</key>
-		<string>19.0.0</string>
-		<key>com.apple.kpi.mach</key>
-		<string>19.0.0</string>
-		<key>com.apple.kpi.unsupported</key>
-		<string>19.0.0</string>
+		<string>15.0.0</string>
 	</dict>
 	<key>OSBundleRequired</key>
 	<string>Root</string>
