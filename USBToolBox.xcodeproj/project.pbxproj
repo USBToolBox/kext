@@ -7,10 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		5114BA3B263DA71E00D7132C /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5114BA3A263DA71E00D7132C /* libkmod.a */; };
 		5114BA55263DAE8300D7132C /* UTBDefault.kext in Embed Resources */ = {isa = PBXBuildFile; fileRef = 5114BA4D263DAE2500D7132C /* UTBDefault.kext */; };
 		5114BA5B263DAF7800D7132C /* USBToolBox.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5114BA58263DAF7800D7132C /* USBToolBox.cpp */; };
 		5114BA5C263DAF7800D7132C /* USBToolBox.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 5114BA59263DAF7800D7132C /* USBToolBox.hpp */; };
+		51D16754264AD26800BC9A2F /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 51D16753264AD26800BC9A2F /* libkmod.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -34,6 +34,7 @@
 		5114BA4D263DAE2500D7132C /* UTBDefault.kext */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.kernel-extension"; name = UTBDefault.kext; path = Resources/UTBDefault.kext; sourceTree = "<group>"; };
 		5114BA58263DAF7800D7132C /* USBToolBox.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = USBToolBox.cpp; sourceTree = "<group>"; };
 		5114BA59263DAF7800D7132C /* USBToolBox.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = USBToolBox.hpp; sourceTree = "<group>"; };
+		51D16753264AD26800BC9A2F /* libkmod.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libkmod.a; path = MacKernelSDK/Library/x86_64/libkmod.a; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -41,7 +42,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5114BA3B263DA71E00D7132C /* libkmod.a in Frameworks */,
+				51D16754264AD26800BC9A2F /* libkmod.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -79,6 +80,7 @@
 		5114BA39263DA71E00D7132C /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				51D16753264AD26800BC9A2F /* libkmod.a */,
 				5114BA3A263DA71E00D7132C /* libkmod.a */,
 			);
 			name = Frameworks;
@@ -312,6 +314,10 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1.0.0;
 				INFOPLIST_FILE = USBToolBox/Info.plist;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/MacKernelSDK/Library/x86_64",
+				);
 				MODULE_NAME = com.dhinakg.USBToolBox.kext;
 				MODULE_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dhinakg.USBToolBox.kext;
@@ -330,6 +336,10 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1.0.0;
 				INFOPLIST_FILE = USBToolBox/Info.plist;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/MacKernelSDK/Library/x86_64",
+				);
 				MODULE_NAME = com.dhinakg.USBToolBox.kext;
 				MODULE_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dhinakg.USBToolBox.kext;
