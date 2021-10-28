@@ -222,12 +222,14 @@ void USBToolBox::mergeProperties(IORegistryEntry* instance) {
     }
     DEBUGLOGPROV("Merging properties");
     
-    if (!(checkKernelArgument(bootargAppleOff) || checkProperty(propertyAppleOff))) {
-        DEBUGLOGPROV("Removing any preexisting ports");
-        deleteProperty(this->controllerInstance, "ports");
-        deleteProperty(this->controllerInstance, "port-count");
-    } else {
-        SYSTEMLOGPROV("Apple off specified, not removing any preexisting ports");
+    if (!checkClassHierarchy(this->pciDevice, "IOUSBHostDevice")) {
+        if (!(checkKernelArgument(bootargAppleOff) || checkProperty(propertyAppleOff))) {
+            DEBUGLOGPROV("Removing any preexisting ports");
+            deleteProperty(this->controllerInstance, "ports");
+            deleteProperty(this->controllerInstance, "port-count");
+        } else {
+            SYSTEMLOGPROV("Apple off specified, not removing any preexisting ports");
+        }
     }
     
     if (!(checkKernelArgument(bootargMapOff) || checkProperty(propertyMapOff))) {
@@ -298,7 +300,7 @@ IOService* USBToolBox::probe(IOService* provider, SInt32* score) {
     if (OSDynamicCast(IOPCIDevice, provider)) {
         // We are attached to the PCI device
         this->pciDevice = provider;
-    } else if (checkClassHierarchy(provider, "AppleUSBHostController")) {
+    } else if (checkClassHierarchy(provider, "AppleUSBHostController") || checkClassHierarchy(provider, "IOUSBHostDevice")) {
         // We are already attached to the instance
         this->controllerInstance = provider;
         this->controllerInstance->retain();
@@ -319,7 +321,8 @@ IOService* USBToolBox::probe(IOService* provider, SInt32* score) {
     
     this->pciDevice->setProperty("UTB Version", versionString);
     
-    removeACPIPorts();
+    if (!checkClassHierarchy(this->pciDevice, "IOUSBHostDevice")
+        removeACPIPorts();
     
     if (!(this->controllerInstance)) {
         this->controllerInstance = getControllerViaMatching();
