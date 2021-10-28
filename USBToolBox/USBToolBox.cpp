@@ -321,7 +321,7 @@ IOService* USBToolBox::probe(IOService* provider, SInt32* score) {
     
     this->pciDevice->setProperty("UTB Version", versionString);
     
-    if (!checkClassHierarchy(this->pciDevice, "IOUSBHostDevice")
+    if (!checkClassHierarchy(this->pciDevice, "IOUSBHostDevice"))
         removeACPIPorts();
     
     if (!(this->controllerInstance)) {
