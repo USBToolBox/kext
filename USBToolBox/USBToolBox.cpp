@@ -15,10 +15,6 @@
 
 #include "USBToolBox.hpp"
 
-#define super IOService
-#define PRODUCT_NAME USBToolBox
-
-
 #define checkProperty(a) (this->pciDevice && this->pciDevice->getProperty(a)) || (this->controllerInstance && this->controllerInstance->getProperty(a)) || getProperty(a)
 
 OSDefineMetaClassAndStructors(USBToolBox, IOService)
@@ -383,11 +379,9 @@ bool USBToolBox::start(IOService *provider) {
         DEBUGLOGPROV("Installed controller notifier status: %s", notifierStatus ? "successful" : "failed");
     } else {
         mergeProperties();
+        DEBUGLOGPROV("Successfully applied properties, exiting");
+        return false;
     }
     DEBUGLOGPROV("start exit");
     return super::start(provider);
-}
-
-void USBToolBox::free() {
-    super::free();
 }

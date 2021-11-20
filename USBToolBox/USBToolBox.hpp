@@ -70,7 +70,6 @@ class USBToolBox : public IOService {
 public:
     virtual IOService* probe(IOService* provider, SInt32* score) override;
     virtual bool start(IOService* provider) override;
-    virtual void free() override;
 private:
     uint64_t matchWait = DEFAULT_WAIT; // Default timeout in seconds
 
