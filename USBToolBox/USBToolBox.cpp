@@ -212,7 +212,73 @@ void USBToolBox::deleteProperty(IORegistryEntry* entry, const char* property) {
     }
 }
 
+OSObject* USBToolBox::fixMapForTahoe(OSObject* object) {
+    OSDictionary* ports = OSDynamicCast(OSDictionary, object);
+    if (!ports) {
+        SYSTEMLOGPROV("Ports is not a dictionary, skipping");
+        return object;
+    }
+
+    OSDictionary* portsCopy = OSDynamicCast(OSDictionary, ports->copyCollection());
+    if (!portsCopy) {
+        SYSTEMLOGPROV("Failed to copy ports dictionary, skipping");
+        return object;
+    }
+    OSSafeReleaseNULL(ports);
+
+    const OSSymbol* portSymbol = OSSymbol::withCString("port");
+    const OSSymbol* usbConnectorSymbol = OSSymbol::withCString("UsbConnector");
+    const OSSymbol* portNumberSymbol = OSSymbol::withCString("usb-port-number");
+    const OSSymbol* portTypeSymbol = OSSymbol::withCString("usb-port-type");
+
+    if (OSCollectionIterator* propertyIterator = OSCollectionIterator::withCollection(portsCopy)) {
+        DEBUGLOGPROV("Starting iteration over ports");
+        while (OSSymbol* key = OSDynamicCast(OSSymbol, propertyIterator->getNextObject())) {
+            OSObject* value = portsCopy->getObject(key);
+            OSDictionary* portDict = OSDynamicCast(OSDictionary, value);
+            if (!portDict) {
+                DEBUGLOGPROV("Port %s is not a dictionary, skipping", key->getCStringNoCopy());
+                continue;
+            }
+
+            if (portDict->getObject(portNumberSymbol)) {
+                DEBUGLOGPROV("Port %s already has usb-port-number, skipping", key->getCStringNoCopy());
+            } else if (!portDict->getObject(portSymbol)) {
+                DEBUGLOGPROV("Port %s does not have port, skipping", key->getCStringNoCopy());
+            } else {
+                DEBUGLOGPROV("Port %s does not have usb-port-number, copying port to usb-port-number", key->getCStringNoCopy());
+                portDict->setObject(portNumberSymbol, portDict->getObject(portSymbol));
+            }
+
+            if (portDict->getObject(portTypeSymbol)) {
+                DEBUGLOGPROV("Port %s already has usb-port-type, skipping", key->getCStringNoCopy());
+            } else if (!portDict->getObject(usbConnectorSymbol)) {
+                DEBUGLOGPROV("Port %s does not have UsbConnector, skipping", key->getCStringNoCopy());
+            } else {
+                DEBUGLOGPROV("Port %s does not have usb-port-type, copying UsbConnector to usb-port-type", key->getCStringNoCopy());
+                portDict->setObject(portTypeSymbol, portDict->getObject(usbConnectorSymbol));
+            }
+        }
+        DEBUGLOGPROV("Successfully fixed ports");
+        OSSafeReleaseNULL(propertyIterator);
+    } else {
+        SYSTEMLOGPROV("Failed to create ports iterator!");
+    }
+
+    OSSafeReleaseNULL(portTypeSymbol);
+    OSSafeReleaseNULL(usbConnectorSymbol);
+    OSSafeReleaseNULL(portNumberSymbol);
+    OSSafeReleaseNULL(portSymbol);
+
+    return portsCopy;
+}
+
+extern const int version_major;
+
+
 void USBToolBox::mergeProperties(IORegistryEntry* instance) {
+    const OSSymbol* portsSymbol = OSSymbol::withCString("ports");
+
     if (instance) {
         this->controllerInstance = instance;
     }
@@ -238,8 +304,21 @@ void USBToolBox::mergeProperties(IORegistryEntry* instance) {
             if (OSCollectionIterator* propertyIterator = OSCollectionIterator::withCollection(properties)) {
                 DEBUGLOGPROV("Starting iteration over properties");
                 while (OSSymbol* key = OSDynamicCast(OSSymbol, propertyIterator->getNextObject())) {
+                    OSObject* value = properties->getObject(key);
+                    if (!value) {
+                        DEBUGLOGPROV("Property %s is null, skipping", key->getCStringNoCopy());
+                        continue;
+                    }
+                    value->retain(); // Needed for proper handling in fixMapForTahoe
+
+                    if (key == portsSymbol && version_major >= 25) {
+                        DEBUGLOGPROV("Fixing map");
+                        value = fixMapForTahoe(value);
+                    }
+
                     //DEBUGLOGPROV("Applied property %s", key->getCStringNoCopy());
-                    this->controllerInstance->setProperty(key, properties->getObject(key));
+                    this->controllerInstance->setProperty(key, value);
+                    OSSafeReleaseNULL(value);
                 }
                 SYSTEMLOGPROV("Successfully applied map");
                 OSSafeReleaseNULL(propertyIterator);
@@ -254,6 +333,7 @@ void USBToolBox::mergeProperties(IORegistryEntry* instance) {
         SYSTEMLOGPROV("Map disabled, continuing");
     }
     this->controllerInstance->release();
+    OSSafeReleaseNULL(portsSymbol);
 }
 
 void USBToolBox::removeACPIPorts() {
