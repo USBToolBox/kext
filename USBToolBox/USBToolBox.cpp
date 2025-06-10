@@ -150,7 +150,7 @@ IORegistryEntry* USBToolBox::getControllerViaMatching() {
     if (controller) {
         DEBUGLOGPROV("waitForMatchingService successful");
     } else {
-        SYSTEMLOGPROV("waitForMatchingService failed or timed out");
+        SYSTEMLOGPROV("waitForMatchingService failed or timed out, will try different method");
     }
     return controller;
 }
@@ -241,7 +241,7 @@ void USBToolBox::mergeProperties(IORegistryEntry* instance) {
                     //DEBUGLOGPROV("Applied property %s", key->getCStringNoCopy());
                     this->controllerInstance->setProperty(key, properties->getObject(key));
                 }
-                DEBUGLOGPROV("Successfully applied map");
+                SYSTEMLOGPROV("Successfully applied map");
                 OSSafeReleaseNULL(propertyIterator);
             } else {
                 SYSTEMLOGPROV("Failed to create property iterator!");
@@ -321,7 +321,7 @@ IOService* USBToolBox::probe(IOService* provider, SInt32* score) {
         this->controllerInstance = getControllerViaMatching();
     }
     if (!(this->controllerInstance)) {
-        DEBUGLOGPROV("Failed to obtain via matching in probe");
+        SYSTEMLOGPROV("Failed to obtain via matching in probe, will try during start");
     } else {
         mergeProperties();
         DEBUGLOGPROV("Probe early finish");
@@ -341,7 +341,7 @@ bool USBToolBox::matchingCallback(OSDictionary* matchingDict, IOService* newServ
     // Should never be null, but better safe than sorry.
     OSSafeReleaseNULL(matchingDict);
     
-    DEBUGLOGPROV("controller callback end");
+    SYSTEMLOGPROV("Controller notifier callback finished, goodbye!");
     terminate();
     return true;
 }
@@ -357,12 +357,12 @@ bool USBToolBox::start(IOService *provider) {
     this->controllerInstance = getControllerViaMatching();
     
     if (!(this->controllerInstance)) {
-        DEBUGLOGPROV("Failed to obtain via matching, falling back to iteration");
+        SYSTEMLOGPROV("Failed to obtain via matching, falling back to iteration");
         this->controllerInstance = getControllerViaIteration();
     }
     
     if (!(this->controllerInstance)) {
-        DEBUGLOGPROV("Failed to obtain via iteration, falling back to notification");
+        SYSTEMLOGPROV("Failed to obtain via iteration, falling back to notification");
         OSDictionary* matchingDict = createMatchingDictionary();
         
         if (!matchingDict) {
@@ -376,10 +376,10 @@ bool USBToolBox::start(IOService *provider) {
         }
         // static IONotifier* addMatchingNotification(const OSSymbol* type, OSDictionary* matching, IOServiceMatchingNotificationHandler handler, void* target, void* ref = NULL, SInt32 priority = 0)
         IONotifier* notifierStatus = addMatchingNotification(gIOMatchedNotification, matchingDict, _matchingCallback, this, matchingDict);
-        DEBUGLOGPROV("Installed controller notifier status: %s", notifierStatus ? "successful" : "failed");
+        SYSTEMLOGPROV("Installed controller notifier status: %s", notifierStatus ? "successful" : "failed");
     } else {
         mergeProperties();
-        DEBUGLOGPROV("Successfully applied properties, exiting");
+        SYSTEMLOGPROV("Successfully applied properties, exiting");
         return false;
     }
     DEBUGLOGPROV("start exit");
