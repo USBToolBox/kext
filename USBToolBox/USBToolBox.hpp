@@ -34,6 +34,9 @@
 #define DEBUGLOGPROV(format, args...)
 #endif
 
+// Kernel major
+extern const int version_major;
+
 
 class USBToolBox : public IOService {
     OSDeclareDefaultStructors(USBToolBox)
@@ -82,6 +85,7 @@ private:
     static bool _matchingCallback(void* matchingDict, void* refCon, IOService* newService, IONotifier* notifier);
     IORegistryEntry* getControllerViaMatching();
     IORegistryEntry* getControllerViaIteration();
+    OSObject* fixMapForTahoe(OSObject* object);
     void mergeProperties(IORegistryEntry* instance = NULL);
     void removeACPIPorts();
     

@@ -150,7 +150,7 @@ IORegistryEntry* USBToolBox::getControllerViaMatching() {
     if (controller) {
         DEBUGLOGPROV("waitForMatchingService successful");
     } else {
-        SYSTEMLOGPROV("waitForMatchingService failed or timed out");
+        SYSTEMLOGPROV("waitForMatchingService failed or timed out, will try different method");
     }
     return controller;
 }
@@ -212,7 +212,70 @@ void USBToolBox::deleteProperty(IORegistryEntry* entry, const char* property) {
     }
 }
 
+OSObject* USBToolBox::fixMapForTahoe(OSObject* object) {
+    OSDictionary* ports = OSDynamicCast(OSDictionary, object);
+    if (!ports) {
+        SYSTEMLOGPROV("Ports is not a dictionary, skipping");
+        return object;
+    }
+
+    OSDictionary* portsCopy = OSDynamicCast(OSDictionary, ports->copyCollection());
+    if (!portsCopy) {
+        SYSTEMLOGPROV("Failed to copy ports dictionary, skipping");
+        return object;
+    }
+    OSSafeReleaseNULL(ports);
+
+    const OSSymbol* portSymbol = OSSymbol::withCString("port");
+    const OSSymbol* usbConnectorSymbol = OSSymbol::withCString("UsbConnector");
+    const OSSymbol* portNumberSymbol = OSSymbol::withCString("usb-port-number");
+    const OSSymbol* portTypeSymbol = OSSymbol::withCString("usb-port-type");
+
+    if (OSCollectionIterator* propertyIterator = OSCollectionIterator::withCollection(portsCopy)) {
+        DEBUGLOGPROV("Starting iteration over ports");
+        while (OSSymbol* key = OSDynamicCast(OSSymbol, propertyIterator->getNextObject())) {
+            OSObject* value = portsCopy->getObject(key);
+            OSDictionary* portDict = OSDynamicCast(OSDictionary, value);
+            if (!portDict) {
+                DEBUGLOGPROV("Port %s is not a dictionary, skipping", key->getCStringNoCopy());
+                continue;
+            }
+
+            if (portDict->getObject(portNumberSymbol)) {
+                DEBUGLOGPROV("Port %s already has usb-port-number, skipping", key->getCStringNoCopy());
+            } else if (!portDict->getObject(portSymbol)) {
+                DEBUGLOGPROV("Port %s does not have port, skipping", key->getCStringNoCopy());
+            } else {
+                DEBUGLOGPROV("Port %s does not have usb-port-number, copying port to usb-port-number", key->getCStringNoCopy());
+                portDict->setObject(portNumberSymbol, portDict->getObject(portSymbol));
+            }
+
+            if (portDict->getObject(portTypeSymbol)) {
+                DEBUGLOGPROV("Port %s already has usb-port-type, skipping", key->getCStringNoCopy());
+            } else if (!portDict->getObject(usbConnectorSymbol)) {
+                DEBUGLOGPROV("Port %s does not have UsbConnector, skipping", key->getCStringNoCopy());
+            } else {
+                DEBUGLOGPROV("Port %s does not have usb-port-type, copying UsbConnector to usb-port-type", key->getCStringNoCopy());
+                portDict->setObject(portTypeSymbol, portDict->getObject(usbConnectorSymbol));
+            }
+        }
+        DEBUGLOGPROV("Successfully fixed ports");
+        OSSafeReleaseNULL(propertyIterator);
+    } else {
+        SYSTEMLOGPROV("Failed to create ports iterator!");
+    }
+
+    OSSafeReleaseNULL(portTypeSymbol);
+    OSSafeReleaseNULL(usbConnectorSymbol);
+    OSSafeReleaseNULL(portNumberSymbol);
+    OSSafeReleaseNULL(portSymbol);
+
+    return portsCopy;
+}
+
 void USBToolBox::mergeProperties(IORegistryEntry* instance) {
+    const OSSymbol* portsSymbol = OSSymbol::withCString("ports");
+
     if (instance) {
         this->controllerInstance = instance;
     }
@@ -238,10 +301,23 @@ void USBToolBox::mergeProperties(IORegistryEntry* instance) {
             if (OSCollectionIterator* propertyIterator = OSCollectionIterator::withCollection(properties)) {
                 DEBUGLOGPROV("Starting iteration over properties");
                 while (OSSymbol* key = OSDynamicCast(OSSymbol, propertyIterator->getNextObject())) {
+                    OSObject* value = properties->getObject(key);
+                    if (!value) {
+                        DEBUGLOGPROV("Property %s is null, skipping", key->getCStringNoCopy());
+                        continue;
+                    }
+                    value->retain(); // Needed for proper handling in fixMapForTahoe
+
+                    if (key == portsSymbol && version_major >= 25) {
+                        DEBUGLOGPROV("Fixing map");
+                        value = fixMapForTahoe(value);
+                    }
+
                     //DEBUGLOGPROV("Applied property %s", key->getCStringNoCopy());
-                    this->controllerInstance->setProperty(key, properties->getObject(key));
+                    this->controllerInstance->setProperty(key, value);
+                    OSSafeReleaseNULL(value);
                 }
-                DEBUGLOGPROV("Successfully applied map");
+                SYSTEMLOGPROV("Successfully applied map");
                 OSSafeReleaseNULL(propertyIterator);
             } else {
                 SYSTEMLOGPROV("Failed to create property iterator!");
@@ -254,6 +330,7 @@ void USBToolBox::mergeProperties(IORegistryEntry* instance) {
         SYSTEMLOGPROV("Map disabled, continuing");
     }
     this->controllerInstance->release();
+    OSSafeReleaseNULL(portsSymbol);
 }
 
 void USBToolBox::removeACPIPorts() {
@@ -321,7 +398,7 @@ IOService* USBToolBox::probe(IOService* provider, SInt32* score) {
         this->controllerInstance = getControllerViaMatching();
     }
     if (!(this->controllerInstance)) {
-        DEBUGLOGPROV("Failed to obtain via matching in probe");
+        SYSTEMLOGPROV("Failed to obtain via matching in probe, will try during start");
     } else {
         mergeProperties();
         DEBUGLOGPROV("Probe early finish");
@@ -341,7 +418,7 @@ bool USBToolBox::matchingCallback(OSDictionary* matchingDict, IOService* newServ
     // Should never be null, but better safe than sorry.
     OSSafeReleaseNULL(matchingDict);
     
-    DEBUGLOGPROV("controller callback end");
+    SYSTEMLOGPROV("Controller notifier callback finished, goodbye!");
     terminate();
     return true;
 }
@@ -357,12 +434,12 @@ bool USBToolBox::start(IOService *provider) {
     this->controllerInstance = getControllerViaMatching();
     
     if (!(this->controllerInstance)) {
-        DEBUGLOGPROV("Failed to obtain via matching, falling back to iteration");
+        SYSTEMLOGPROV("Failed to obtain via matching, falling back to iteration");
         this->controllerInstance = getControllerViaIteration();
     }
     
     if (!(this->controllerInstance)) {
-        DEBUGLOGPROV("Failed to obtain via iteration, falling back to notification");
+        SYSTEMLOGPROV("Failed to obtain via iteration, falling back to notification");
         OSDictionary* matchingDict = createMatchingDictionary();
         
         if (!matchingDict) {
@@ -376,10 +453,10 @@ bool USBToolBox::start(IOService *provider) {
         }
         // static IONotifier* addMatchingNotification(const OSSymbol* type, OSDictionary* matching, IOServiceMatchingNotificationHandler handler, void* target, void* ref = NULL, SInt32 priority = 0)
         IONotifier* notifierStatus = addMatchingNotification(gIOMatchedNotification, matchingDict, _matchingCallback, this, matchingDict);
-        DEBUGLOGPROV("Installed controller notifier status: %s", notifierStatus ? "successful" : "failed");
+        SYSTEMLOGPROV("Installed controller notifier status: %s", notifierStatus ? "successful" : "failed");
     } else {
         mergeProperties();
-        DEBUGLOGPROV("Successfully applied properties, exiting");
+        SYSTEMLOGPROV("Successfully applied properties, exiting");
         return false;
     }
     DEBUGLOGPROV("start exit");
