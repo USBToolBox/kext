@@ -273,9 +273,6 @@ OSObject* USBToolBox::fixMapForTahoe(OSObject* object) {
     return portsCopy;
 }
 
-extern const int version_major;
-
-
 void USBToolBox::mergeProperties(IORegistryEntry* instance) {
     const OSSymbol* portsSymbol = OSSymbol::withCString("ports");
 

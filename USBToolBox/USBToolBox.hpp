@@ -34,6 +34,9 @@
 #define DEBUGLOGPROV(format, args...)
 #endif
 
+// Kernel major
+extern const int version_major;
+
 
 class USBToolBox : public IOService {
     OSDeclareDefaultStructors(USBToolBox)
